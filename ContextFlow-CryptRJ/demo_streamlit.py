@@ -1,10 +1,10 @@
-# demo_streamlit.py
-import base64
-import secrets
+# demo_streamlit.py  –  ContextFlow-Crypt demo + copiar/pegar paquete
+import base64, json, secrets
 import streamlit as st
+import pyperclip                 # NUEVO
 from contextflow_crypt import ContextFlowCrypt
 
-# ---------- Configuración de la página ----------
+# ---------- Config. página ----------
 st.set_page_config(
     page_title="ContextFlow-Crypt Demo",
     page_icon="🔐",
@@ -12,32 +12,23 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-ACCENT = "#00FF87"   # verde neón
-BG_DARK = "#0B0E11"
+ACCENT, BG_DARK = "#00FF87", "#0B0E11"
 
-# ---------- Estilos CSS para look “hacker elegante” ----------
+# ---------- CSS ----------
 st.markdown(
     f"""
     <style>
         html, body, [data-testid="stApp"] {{
-            background-color: {BG_DARK};
-            color: white;
+            background-color:{BG_DARK}; color:white;
         }}
         .stButton>button {{
-            background-color:{ACCENT};
-            color:black;
-            border:none;
-            transition: 0.2s;
-            font-weight:600;
+            background-color:{ACCENT}; color:black; border:none;
+            transition:.2s; font-weight:600;
         }}
-        .stButton>button:hover {{
-            box-shadow:0 0 12px {ACCENT};
-            transform: scale(1.05);
-        }}
+        .stButton>button:hover {{ box-shadow:0 0 12px {ACCENT}; transform:scale(1.05); }}
         textarea, input {{
-            background:rgba(255,255,255,0.05);
-            color:white;
-            border:1px solid rgba(255,255,255,0.15);
+            background:rgba(255,255,255,.05); color:white;
+            border:1px solid rgba(255,255,255,.15);
         }}
     </style>
     """,
@@ -48,11 +39,11 @@ st.title("🔐 ContextFlow-Crypt – Live Demo")
 
 tab_enc, tab_dec = st.tabs(["Encrypt", "Decrypt"])
 
-# ---------- Pestaña ENCRYPT ----------
+# ------------------- ENCRYPT -------------------
 with tab_enc:
     st.subheader("Cifrar texto")
-    plaintext = st.text_area("Texto plano", placeholder="Escribe aquí…")
-    key_hex = st.text_input("Clave (hex)", value=secrets.token_hex(32))
+    plaintext = st.text_area("Texto plano")
+    key_hex   = st.text_input("Clave (hex)", value=secrets.token_hex(32))
 
     if st.button("Encrypt"):
         try:
@@ -64,28 +55,57 @@ with tab_enc:
 
             st.text_area("Ciphertext (Base64)", cipher_b64, height=120)
             st.text_input("Contexto generado", context_vec)
-            st.success("✅ Cifrado exitoso")
+
+            # —— Paquete único
+            package_str = base64.b64encode(
+                json.dumps({"k": key_hex, "c": cipher_b64, "x": context_vec}).encode()
+            ).decode()
+
+            st.text_input(
+                "Paquete único (copia y pega donde quieras)",
+                package_str,
+                key="pkg_show",
+            )
+
+            if st.button("Copiar paquete"):
+                pyperclip.copy(package_str)          # ← Copia al portapapeles
+                st.success("📋 Paquete copiado al portapapeles")
+
         except Exception as e:
             st.error(f"Error: {e}")
 
-# ---------- Pestaña DECRYPT ----------
+# ------------------- DECRYPT -------------------
 with tab_dec:
     st.subheader("Descifrar texto")
-    cipher_b64_in = st.text_area("Ciphertext (Base64)")
-    context_in = st.text_input("Contexto")
-    key_hex_in = st.text_input("Clave (hex)")
+
+    # — Botón para pegar desde portapapeles
+    if st.button("Pegar paquete del portapapeles"):
+        st.session_state["pkg_in"] = pyperclip.paste()
+
+    pkg_in = st.text_area("Paquete único (opcional)", key="pkg_in")
+
+    if st.button("Importar paquete"):
+        try:
+            data = json.loads(base64.b64decode(pkg_in).decode())
+            st.session_state["cipher_b64_in"] = data["c"]
+            st.session_state["context_in"]    = data["x"]
+            st.session_state["key_hex_in"]    = data["k"]
+            st.success("Campos cargados. Pulsa Decrypt ↓")
+        except Exception as e:
+            st.error(f"Paquete inválido: {e}")
+
+    cipher_b64_in = st.text_area("Ciphertext (Base64)", key="cipher_b64_in", height=120)
+    context_in    = st.text_input("Contexto", key="context_in")
+    key_hex_in    = st.text_input("Clave (hex)", key="key_hex_in")
 
     if st.button("Decrypt"):
         try:
-            key_bytes = bytes.fromhex(key_hex_in)
-            plaintext_out = ContextFlowCrypt.decrypt(
+            pt = ContextFlowCrypt.decrypt(
                 base64.b64decode(cipher_b64_in),
-                key_bytes,
+                bytes.fromhex(key_hex_in),
                 context_in,
             )
-            st.text_area(
-                "Texto plano recuperado", plaintext_out.decode(), height=120
-            )
+            st.text_area("Texto plano recuperado", pt.decode(), height=120)
             st.success("✅ Descifrado correcto")
         except Exception as e:
             st.error(f"Error: {e}")
