@@ -1,10 +1,9 @@
-# demo_streamlit.py  –  ContextFlow-Crypt demo + copiar/pegar paquete
-import base64, json, secrets
-import streamlit as st
-import pyperclip                 # NUEVO
+# demo_streamlit.py  –  ContextFlow-Crypt demo (sin botón Copiar paquete)
+import base64, json, secrets, streamlit as st
+import pyperclip                           # usado solo para "Pegar paquete"
 from contextflow_crypt import ContextFlowCrypt
 
-# ---------- Config. página ----------
+# ---------- Configuración ----------
 st.set_page_config(
     page_title="ContextFlow-Crypt Demo",
     page_icon="🔐",
@@ -62,14 +61,12 @@ with tab_enc:
             ).decode()
 
             st.text_input(
-                "Paquete único (copia y pega donde quieras)",
+                "Paquete único (copia con el icono 📋 o Ctrl+C)",
                 package_str,
                 key="pkg_show",
             )
 
-            if st.button("Copiar paquete"):
-                pyperclip.copy(package_str)          # ← Copia al portapapeles
-                st.success("📋 Paquete copiado al portapapeles")
+            st.success("✅ Paquete generado. Copia con el icono 📋 o Ctrl+C")
 
         except Exception as e:
             st.error(f"Error: {e}")
@@ -78,11 +75,11 @@ with tab_enc:
 with tab_dec:
     st.subheader("Descifrar texto")
 
-    # — Botón para pegar desde portapapeles
+    # — Botón para pegar desde portapapeles (opcional)
     if st.button("Pegar paquete del portapapeles"):
         st.session_state["pkg_in"] = pyperclip.paste()
 
-    pkg_in = st.text_area("Paquete único (opcional)", key="pkg_in")
+    pkg_in = st.text_area("Paquete único", key="pkg_in")
 
     if st.button("Importar paquete"):
         try:
