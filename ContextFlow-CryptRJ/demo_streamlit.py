@@ -1,6 +1,5 @@
-# demo_streamlit.py  –  ContextFlow-Crypt demo (sin botón Copiar paquete)
+# demo_streamlit.py  –  ContextFlow-Crypt demo (sin botones de copiar/pegar)
 import base64, json, secrets, streamlit as st
-import pyperclip                           # usado solo para "Pegar paquete"
 from contextflow_crypt import ContextFlowCrypt
 
 # ---------- Configuración ----------
@@ -63,7 +62,6 @@ with tab_enc:
             st.text_input(
                 "Paquete único (copia con el icono 📋 o Ctrl+C)",
                 package_str,
-                key="pkg_show",
             )
 
             st.success("✅ Paquete generado. Copia con el icono 📋 o Ctrl+C")
@@ -75,12 +73,14 @@ with tab_enc:
 with tab_dec:
     st.subheader("Descifrar texto")
 
-    # — Botón para pegar desde portapapeles (opcional)
-    if st.button("Pegar paquete del portapapeles"):
-        st.session_state["pkg_in"] = pyperclip.paste()
+    st.markdown(
+        "📋 **Paso 1.** Copia el paquete único desde la pestaña **Encrypt** "
+        "usando el icono de copia o Ctrl+C.<br>"
+        "💾 **Paso 2.** PégalO aquí (Ctrl+V) y pulsa **Importar paquete**.",
+        unsafe_allow_html=True,
+    )
 
-    pkg_in = st.text_area("Paquete único", key="pkg_in")
-
+    pkg_in = st.text_area("Paquete único")
     if st.button("Importar paquete"):
         try:
             data = json.loads(base64.b64decode(pkg_in).decode())
